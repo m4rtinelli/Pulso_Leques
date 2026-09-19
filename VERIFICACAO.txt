@@ -1,0 +1,4 @@
+3D: testes de geometria, pivô inferior e fechamento do ciclo aprovados. Conferidos: preview WebGL, formato horizontal, 16 folhas, PNG com transparência selecionada, MP4 completo e cancelamento. Aplicação confirmou geração; arquivos novos não inspecionados externamente. SVG anterior removido por não representar oclusão 3D.
+Modos: alternância 3D/leque, preservação de quantidade de folhas, SVG no leque e retorno seguro a PNG no 3D verificados. Testes de geometria dos dois modos aprovados.
+Espaçamento circular testado de 2 a 16 folhas, quatro movimentos, quatro tempos e três fases, incluindo o intervalo de fechamento. Conferência visual com seis folhas.
+Paleta: presets individuais, adição de folha e remoção/reinserção conferidos no navegador; nova folha voltou à cor da marca.

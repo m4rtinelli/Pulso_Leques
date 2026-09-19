@@ -1,0 +1,17 @@
+{
+  "name": "leque-studio",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node scripts/serve.js",
+    "build": "node scripts/build.js",
+    "preview": "node scripts/preview.js",
+    "test": "node tests/scene.test.js"
+  },
+  "dependencies": {
+    "mediabunny": "1.56.2",
+    "p5": "1.11.11",
+    "three": "0.180.0"
+  }
+}
