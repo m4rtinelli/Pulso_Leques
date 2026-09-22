@@ -48,7 +48,11 @@ $("#app").innerHTML = `
       <section><div class="section-title">Paleta<span>04</span></div><div class="palettes"><button class="palette active" data-palette="0" aria-label="Aplicar paleta da marca a todas as folhas"><i style="--c:#ffaaab"></i><i style="--c:#f0ffbf"></i><i style="--c:#ccfa36"></i><i style="--c:#ff4347"></i></button></div><p class="hint">Aplicar as cores da marca a todas as folhas.</p>
         <label class="color-label" for="background">Fundo da arte<input id="background" type="color" value="#f1eee7"/></label>
       </section>
-      <section><div class="section-title">Brilho<span>05</span></div><label class="check-label" for="glow-enabled"><input id="glow-enabled" type="checkbox"/> Ativar brilho</label>
+      <section><div class="section-title">Volume 3D<span>05</span></div><label class="check-label" for="volume-enabled"><input id="volume-enabled" type="checkbox"/> Ativar volume</label>
+        ${range("volume-intensity", "Intensidade", 0, 100, 55, "%")}
+        <p class="hint">Gradiente sutil na largura de cada folha, simulando a seção arredondada de um tubo.</p>
+      </section>
+      <section><div class="section-title">Brilho<span>06</span></div><label class="check-label" for="glow-enabled"><input id="glow-enabled" type="checkbox"/> Ativar brilho</label>
         ${range("glow-intensity", "Intensidade", 0, 100, 55, "%")}${range("glow-radius", "Alcance", 0, 100, 50, "%")}${range("glow-grain", "Grão", 0, 100, 35, "%")}
         <p class="hint">Brilho aditivo com borda suavizada e grão, como neon. Não incluído na exportação SVG.</p>
       </section>
@@ -172,6 +176,11 @@ $("#glow-enabled").addEventListener(
 bindRange("glow-intensity", (v) => (config.glow.intensity = v));
 bindRange("glow-radius", (v) => (config.glow.radius = v));
 bindRange("glow-grain", (v) => (config.glow.grain = v));
+$("#volume-enabled").addEventListener(
+  "change",
+  (e) => (config.volume.enabled = e.target.checked),
+);
+bindRange("volume-intensity", (v) => (config.volume.intensity = v));
 bindRange("duration", (v) => {
   time = (time / config.duration) * v;
   config.duration = v;
@@ -293,6 +302,8 @@ $("#reset").onclick = () => {
   setRange("glow-radius", config.glow.radius);
   setRange("glow-grain", config.glow.grain);
   $("#glow-enabled").checked = config.glow.enabled;
+  setRange("volume-intensity", config.volume.intensity);
+  $("#volume-enabled").checked = config.volume.enabled;
   $("#format").value = "square";
   $("#format").dispatchEvent(new Event("change"));
   $("#background").value = config.background;
@@ -436,6 +447,7 @@ $('#scene-mode').onchange=()=>{
  preview.dispose();preview.canvas.remove();preview=createRenderer(config);canvasHost.append(preview.canvas);preview.canvas.setAttribute('role','img');preview.canvas.setAttribute('aria-label',next==='fan'?'Leque vetorial do símbolo':'Símbolos articulados em 3D pelo ponto inferior');
  for(const key of ['count','spread','rotation','tilt','size','stagger','duration','speed'])setRange(key,config[key]);
  setRange('glow-intensity',config.glow.intensity);setRange('glow-radius',config.glow.radius);setRange('glow-grain',config.glow.grain);$('#glow-enabled').checked=config.glow.enabled;
+ setRange('volume-intensity',config.volume.intensity);$('#volume-enabled').checked=config.volume.enabled;
  $('#format').value=config.width===config.height?'square':config.width>config.height?'landscape':'portrait';$('#format').dispatchEvent(new Event('change'));
  $('#background').value=config.background;$('#timeline').max=config.duration;$('#duration-label').textContent=config.duration.toFixed(2)+' s';
  $('#motion-description').textContent=next==='fan'?'Abertura e fechamento em leque, com o contorno original do símbolo.':'Folhas presas pela base. Frente e verso giram no espaço ao redor da articulação inferior.';
