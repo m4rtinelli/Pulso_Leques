@@ -1,5 +1,5 @@
 import {fanSVG} from './fan.js';
-import { createRenderer } from "./renderer.js";
+import { createRenderer } from "./glow.js";
 
 function download(blob, extension) {
   const url = URL.createObjectURL(blob);

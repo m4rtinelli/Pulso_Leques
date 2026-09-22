@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { cubicBezier } from './easing.js';
-export const defaults={width:1080,height:1080,count:5,spread:360,rotation:0,tilt:25,size:83,stagger:0,duration:6,speed:1,growth:'cascade',motion:'flow',easing:[0.42,0,0.58,1],easingTarget:'both',background:'#f1eee7',colors:['#ffaaab','#f0ffbf','#ccfa36','#ff4347'],heights:Array(16).fill(100)};
+export const defaults={width:1080,height:1080,count:5,spread:360,rotation:0,tilt:25,size:83,stagger:0,duration:6,speed:1,growth:'cascade',motion:'flow',easing:[0.42,0,0.58,1],easingTarget:'both',background:'#f1eee7',colors:['#ffaaab','#f0ffbf','#ccfa36','#ff4347'],heights:Array(16).fill(100),glow:{enabled:false,intensity:55,radius:50}};
 export const clamp=(x,a=0,b=1)=>Math.max(a,Math.min(b,x));
 // The supplied path, converted to local coordinates with its bottom edge at the hinge.
 export function makeGeometry(){
