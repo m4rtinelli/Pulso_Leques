@@ -50,6 +50,7 @@ $("#app").innerHTML = `
       </section>
       <section><div class="section-title">Volume 3D<span>05</span></div><label class="check-label" for="volume-enabled"><input id="volume-enabled" type="checkbox"/> Ativar volume</label>
         ${range("volume-intensity", "Intensidade", 0, 100, 55, "%")}
+        <label class="check-label" for="volume-invert"><input id="volume-invert" type="checkbox"/> Inverter (claro nas bordas)</label>
         <p class="hint">Gradiente sutil na largura de cada folha, simulando a seção arredondada de um tubo.</p>
       </section>
       <section><div class="section-title">Brilho<span>06</span></div><label class="check-label" for="glow-enabled"><input id="glow-enabled" type="checkbox"/> Ativar brilho</label>
@@ -181,6 +182,10 @@ $("#volume-enabled").addEventListener(
   (e) => (config.volume.enabled = e.target.checked),
 );
 bindRange("volume-intensity", (v) => (config.volume.intensity = v));
+$("#volume-invert").addEventListener(
+  "change",
+  (e) => (config.volume.invert = e.target.checked),
+);
 bindRange("duration", (v) => {
   time = (time / config.duration) * v;
   config.duration = v;
@@ -304,6 +309,7 @@ $("#reset").onclick = () => {
   $("#glow-enabled").checked = config.glow.enabled;
   setRange("volume-intensity", config.volume.intensity);
   $("#volume-enabled").checked = config.volume.enabled;
+  $("#volume-invert").checked = config.volume.invert;
   $("#format").value = "square";
   $("#format").dispatchEvent(new Event("change"));
   $("#background").value = config.background;
@@ -447,7 +453,7 @@ $('#scene-mode').onchange=()=>{
  preview.dispose();preview.canvas.remove();preview=createRenderer(config);canvasHost.append(preview.canvas);preview.canvas.setAttribute('role','img');preview.canvas.setAttribute('aria-label',next==='fan'?'Leque vetorial do símbolo':'Símbolos articulados em 3D pelo ponto inferior');
  for(const key of ['count','spread','rotation','tilt','size','stagger','duration','speed'])setRange(key,config[key]);
  setRange('glow-intensity',config.glow.intensity);setRange('glow-radius',config.glow.radius);setRange('glow-grain',config.glow.grain);$('#glow-enabled').checked=config.glow.enabled;
- setRange('volume-intensity',config.volume.intensity);$('#volume-enabled').checked=config.volume.enabled;
+ setRange('volume-intensity',config.volume.intensity);$('#volume-enabled').checked=config.volume.enabled;$('#volume-invert').checked=config.volume.invert;
  $('#format').value=config.width===config.height?'square':config.width>config.height?'landscape':'portrait';$('#format').dispatchEvent(new Event('change'));
  $('#background').value=config.background;$('#timeline').max=config.duration;$('#duration-label').textContent=config.duration.toFixed(2)+' s';
  $('#motion-description').textContent=next==='fan'?'Abertura e fechamento em leque, com o contorno original do símbolo.':'Folhas presas pela base. Frente e verso giram no espaço ao redor da articulação inferior.';

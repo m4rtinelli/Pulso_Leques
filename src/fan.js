@@ -6,9 +6,9 @@ function shadeColor(hex,factor){
  const n=parseInt(hex.slice(1),16),clamp=v=>Math.max(0,Math.min(255,Math.round(v*factor)));
  return `rgb(${clamp((n>>16)&255)},${clamp((n>>8)&255)},${clamp(n&255)})`;
 }
-function volumeStops(color,intensity){
- const k=intensity/100;
- return [[0,shadeColor(color,1-0.5*k)],[0.5,shadeColor(color,1+0.35*k)],[1,shadeColor(color,1-0.5*k)]];
+function volumeStops(color,intensity,invert){
+ const k=intensity/100,edge=shadeColor(color,1-0.5*k),mid=shadeColor(color,1+0.35*k);
+ return invert?[[0,mid],[0.5,edge],[1,mid]]:[[0,edge],[0.5,mid],[1,edge]];
 }
 export function fanScene(c,time){
  time=((time%c.duration)+c.duration)%c.duration;
@@ -30,7 +30,7 @@ export function fanScene(c,time){
 }
 export function fanSVG(c,time,transparent=false){
  const s=fanScene(c,time),volume=c.volume?.enabled;
- const defs=volume?`<defs>${s.leaves.map((l,i)=>`<linearGradient id="vol-${i}" x1="${BOUNDS_X0}" y1="0" x2="${BOUNDS_X1}" y2="0" gradientUnits="userSpaceOnUse">${volumeStops(l.color,c.volume.intensity).map(([o,stop])=>`<stop offset="${o}" stop-color="${stop}"/>`).join('')}</linearGradient>`).join('')}</defs>`:'';
+ const defs=volume?`<defs>${s.leaves.map((l,i)=>`<linearGradient id="vol-${i}" x1="${BOUNDS_X0}" y1="0" x2="${BOUNDS_X1}" y2="0" gradientUnits="userSpaceOnUse">${volumeStops(l.color,c.volume.intensity,c.volume.invert).map(([o,stop])=>`<stop offset="${o}" stop-color="${stop}"/>`).join('')}</linearGradient>`).join('')}</defs>`:'';
  return `<svg xmlns="http://www.w3.org/2000/svg" width="${s.width}" height="${s.height}" viewBox="0 0 ${s.width} ${s.height}">${transparent?'':`<rect width="100%" height="100%" fill="${s.background}"/>`}${defs}${s.leaves.map((l,i)=>`<path id="folha-${i+1}" fill="${volume?`url(#vol-${i})`:l.color}" transform="matrix(${l.matrix.join(' ')})" d="${SYMBOL}"/>`).join('')}</svg>`;
 }
 export function createFanRenderer(c,{scale=1,transparent=false}={}){
@@ -38,7 +38,7 @@ export function createFanRenderer(c,{scale=1,transparent=false}={}){
  function resize(w,h){canvas.width=w*scale;canvas.height=h*scale;}
  resize(c.width,c.height);
  function renderAt(time,settings=c){const s=fanScene(settings,time);ctx.setTransform(scale,0,0,scale,0,0);ctx.clearRect(0,0,s.width,s.height);if(!transparent){ctx.fillStyle=s.background;ctx.fillRect(0,0,s.width,s.height);}for(const l of s.leaves){ctx.save();ctx.transform(...l.matrix);
-  if(settings.volume?.enabled){const grad=ctx.createLinearGradient(BOUNDS_X0,0,BOUNDS_X1,0);for(const[o,stop]of volumeStops(l.color,settings.volume.intensity))grad.addColorStop(o,stop);ctx.fillStyle=grad;}
+  if(settings.volume?.enabled){const grad=ctx.createLinearGradient(BOUNDS_X0,0,BOUNDS_X1,0);for(const[o,stop]of volumeStops(l.color,settings.volume.intensity,settings.volume.invert))grad.addColorStop(o,stop);ctx.fillStyle=grad;}
   else ctx.fillStyle=l.color;
   ctx.fill(path);ctx.restore();}}
  return {canvas,resize,renderAt,dispose(){canvas.width=1;canvas.height=1;}};

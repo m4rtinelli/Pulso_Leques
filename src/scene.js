@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { cubicBezier } from './easing.js';
-export const defaults={width:1080,height:1080,count:5,spread:360,rotation:0,tilt:25,size:83,stagger:0,duration:6,speed:1,growth:'cascade',motion:'flow',easing:[0.42,0,0.58,1],easingTarget:'both',background:'#f1eee7',colors:['#ffaaab','#f0ffbf','#ccfa36','#ff4347'],heights:Array(16).fill(100),glow:{enabled:false,intensity:55,radius:50,grain:35},volume:{enabled:false,intensity:55}};
+export const defaults={width:1080,height:1080,count:5,spread:360,rotation:0,tilt:25,size:83,stagger:0,duration:6,speed:1,growth:'cascade',motion:'flow',easing:[0.42,0,0.58,1],easingTarget:'both',background:'#f1eee7',colors:['#ffaaab','#f0ffbf','#ccfa36','#ff4347'],heights:Array(16).fill(100),glow:{enabled:false,intensity:55,radius:50,grain:35},volume:{enabled:false,intensity:55,invert:false}};
 export const clamp=(x,a=0,b=1)=>Math.max(a,Math.min(b,x));
 // The supplied path, converted to local coordinates with its bottom edge at the hinge.
 export function makeGeometry(){
@@ -14,13 +14,14 @@ export function makeGeometry(){
 // (three.js does not normalize it), so it's rescaled here using the path's own
 // known X bounds instead of assuming a 0-1 range.
 function leafMaterial(side){
- return new THREE.ShaderMaterial({side,uniforms:{color:{value:new THREE.Color()},strength:{value:0}},
+ return new THREE.ShaderMaterial({side,uniforms:{color:{value:new THREE.Color()},strength:{value:0},invert:{value:0}},
   vertexShader:`varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}`,
-  fragmentShader:`uniform vec3 color;uniform float strength;varying vec2 vUv;
+  fragmentShader:`uniform vec3 color;uniform float strength;uniform float invert;varying vec2 vUv;
    void main(){
     float u=clamp((vUv.x+70.1325)/1670.5425,0.0,1.0);
     float rim=1.0-abs(u*2.0-1.0);
-    float shade=mix(1.0,mix(0.55,1.35,pow(rim,1.4)),strength);
+    float r=mix(rim,1.0-rim,invert);
+    float shade=mix(1.0,mix(0.55,1.35,pow(r,1.4)),strength);
     gl_FragColor=vec4(color*shade,1.0);
    }`});
 }
@@ -55,8 +56,8 @@ export function createRenderer(c,{scale=1,transparent=false}={}){
   const elevation=settings.tilt*Math.PI/180;
   camera.position.set(3,Math.sin(elevation)*6,Math.cos(elevation)*6);camera.lookAt(0,0,0);camera.updateProjectionMatrix();
   renderer.setClearColor(settings.background,transparent?0:1);
-  const strength=settings.volume?.enabled?settings.volume.intensity/100:0;
-  transformsAt(settings,time).forEach((t,i)=>{const l=leaves[i];l.pivot.rotation.set(t.rx,t.ry,t.rz,'YXZ');l.pivot.scale.setScalar(t.scale);l.front.uniforms.color.value.set(settings.colors[i%settings.colors.length]);l.back.uniforms.color.value.copy(l.front.uniforms.color.value);l.front.uniforms.strength.value=l.back.uniforms.strength.value=strength;});
+  const strength=settings.volume?.enabled?settings.volume.intensity/100:0,invert=settings.volume?.invert?1:0;
+  transformsAt(settings,time).forEach((t,i)=>{const l=leaves[i];l.pivot.rotation.set(t.rx,t.ry,t.rz,'YXZ');l.pivot.scale.setScalar(t.scale);l.front.uniforms.color.value.set(settings.colors[i%settings.colors.length]);l.back.uniforms.color.value.copy(l.front.uniforms.color.value);l.front.uniforms.strength.value=l.back.uniforms.strength.value=strength;l.front.uniforms.invert.value=l.back.uniforms.invert.value=invert;});
   leaves.forEach((l,i)=>l.pivot.visible=i<settings.count);
   renderer.render(scene,camera);
  }
