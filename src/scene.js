@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { cubicBezier } from './easing.js';
-export const defaults={width:1080,height:1080,count:5,spread:360,rotation:0,tilt:25,size:83,stagger:0,duration:6,speed:1,growth:'cascade',motion:'flow',easing:[0.42,0,0.58,1],easingTarget:'both',background:'#f1eee7',colors:['#ffaaab','#f0ffbf','#ccfa36','#ff4347'],heights:Array(16).fill(100),glow:{enabled:false,intensity:55,radius:50}};
+export const defaults={width:1080,height:1080,count:5,spread:360,rotation:0,tilt:25,size:83,stagger:0,duration:6,speed:1,growth:'cascade',motion:'flow',easing:[0.42,0,0.58,1],easingTarget:'both',background:'#f1eee7',colors:['#ffaaab','#f0ffbf','#ccfa36','#ff4347'],heights:Array(16).fill(100),glow:{enabled:false,intensity:55,radius:50,grain:35},volume:{enabled:false,intensity:55,invert:false}};
 export const clamp=(x,a=0,b=1)=>Math.max(a,Math.min(b,x));
 // The supplied path, converted to local coordinates with its bottom edge at the hinge.
 export function makeGeometry(){
@@ -8,6 +8,22 @@ export function makeGeometry(){
  s.moveTo(967.315,0);s.lineTo(285.249,0);s.lineTo(285.948,1.3045);s.lineTo(16.2903,1106.96);
  s.bezierCurveTo(-70.1325,1461.32,198.221,1803,562.967,1803);s.lineTo(1245.03,1803);s.lineTo(1244.33,1801.7);s.lineTo(1513.99,695.995);s.bezierCurveTo(1600.41,341.685,1332.06,0,967.315,0);s.closePath();
  const g=new THREE.ShapeGeometry(s,48);g.translate(-904, -1803,0);g.scale(1/1803,-1/1803,1/1803);g.computeVertexNormals();return g;
+}
+// Fakes a rounded, tube-like cross-section: a highlight band across the shape's own
+// width, darker toward both edges. ShapeGeometry's UV is the raw path coordinate
+// (three.js does not normalize it), so it's rescaled here using the path's own
+// known X bounds instead of assuming a 0-1 range.
+function leafMaterial(side){
+ return new THREE.ShaderMaterial({side,uniforms:{color:{value:new THREE.Color()},strength:{value:0},invert:{value:0}},
+  vertexShader:`varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}`,
+  fragmentShader:`uniform vec3 color;uniform float strength;uniform float invert;varying vec2 vUv;
+   void main(){
+    float u=clamp((vUv.x+70.1325)/1670.5425,0.0,1.0);
+    float rim=1.0-abs(u*2.0-1.0);
+    float r=mix(rim,1.0-rim,invert);
+    float shade=mix(1.0,mix(0.55,1.35,pow(r,1.4)),strength);
+    gl_FragColor=vec4(color*shade,1.0);
+   }`});
 }
 export function transformsAt(c,time){
  // All leaves share a phase: timing must not compress the angular spacing.
@@ -30,8 +46,8 @@ export function createRenderer(c,{scale=1,transparent=false}={}){
  const scene=new THREE.Scene(),camera=new THREE.OrthographicCamera(),group=new THREE.Group();scene.add(group);
  const geometry=makeGeometry(),leaves=[];
  for(let i=0;i<16;i++){
-  const front=new THREE.MeshBasicMaterial({color:'#ff4347',side:THREE.FrontSide});
-  const back=new THREE.MeshBasicMaterial({color:'#8c183b',side:THREE.BackSide});
+  const front=leafMaterial(THREE.FrontSide);
+  const back=leafMaterial(THREE.BackSide);
   const pivot=new THREE.Group();pivot.add(new THREE.Mesh(geometry,front),new THREE.Mesh(geometry,back));group.add(pivot);leaves.push({pivot,front,back});
  }
  function renderAt(time,settings=c){
@@ -40,7 +56,8 @@ export function createRenderer(c,{scale=1,transparent=false}={}){
   const elevation=settings.tilt*Math.PI/180;
   camera.position.set(3,Math.sin(elevation)*6,Math.cos(elevation)*6);camera.lookAt(0,0,0);camera.updateProjectionMatrix();
   renderer.setClearColor(settings.background,transparent?0:1);
-  transformsAt(settings,time).forEach((t,i)=>{const l=leaves[i];l.pivot.rotation.set(t.rx,t.ry,t.rz,'YXZ');l.pivot.scale.setScalar(t.scale);l.front.color.set(settings.colors[i%settings.colors.length]);l.back.color.copy(l.front.color);});
+  const strength=settings.volume?.enabled?settings.volume.intensity/100:0,invert=settings.volume?.invert?1:0;
+  transformsAt(settings,time).forEach((t,i)=>{const l=leaves[i];l.pivot.rotation.set(t.rx,t.ry,t.rz,'YXZ');l.pivot.scale.setScalar(t.scale);l.front.uniforms.color.value.set(settings.colors[i%settings.colors.length]);l.back.uniforms.color.value.copy(l.front.uniforms.color.value);l.front.uniforms.strength.value=l.back.uniforms.strength.value=strength;l.front.uniforms.invert.value=l.back.uniforms.invert.value=invert;});
   leaves.forEach((l,i)=>l.pivot.visible=i<settings.count);
   renderer.render(scene,camera);
  }
